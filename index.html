@@ -1,0 +1,258 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Colorpal</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <style>
+    #colorInputs > div {
+      margin-right: 0 !important;
+    }
+    .color-block:hover .action-icons {
+      display: flex;
+    }
+    .copy-label {
+      z-index: 30;
+      pointer-events: auto;
+    }
+  </style>
+</head>
+<body class="bg-gray-100 text-gray-800 min-h-screen p-6">
+
+  <h1 class="text-4xl text-gray-700 font-bold text-center mb-6">Colorpal</h1>
+  <div class="max-w-5xl mx-auto bg-white p-6 rounded-lg shadow-md">
+    <div id="colorInputs" class="flex mb-6 space-x-0 justify-center">
+      <!-- Color blocks will be inserted here -->
+    </div>
+
+    <!-- Palette Name Input -->
+    <input id="paletteName" type="text" placeholder="Name your palette..." class="border border-gray-300 px-4 py-2 mb-4 w-full rounded" />
+
+    <div class="flex gap-4 mb-12">
+        <button onclick="generatePalette()" class="border border-gray-800 text-gray-800 hover:bg-gray-200 px-4 py-2 rounded w-full">Generate palette</button>
+        <button onclick="savePalette()" class="bg-gray-800 hover:bg-gray-900 text-white px-4 py-2 rounded w-full">Save palette</button>
+    </div>
+
+    <div id="savedPalettes"></div>
+  </div>
+
+  <script>
+    const colorInputsContainer = document.getElementById('colorInputs');
+    const savedPalettes = document.getElementById('savedPalettes');
+
+    async function copyToClipboard(text) {
+      try {
+        await navigator.clipboard.writeText(text);
+        return true;
+      } catch (err) {
+        const textarea = document.createElement('textarea');
+        textarea.value = text;
+        textarea.style.position = 'fixed';
+        textarea.style.top = '-1000px';
+        document.body.appendChild(textarea);
+        textarea.focus();
+        textarea.select();
+        try {
+          document.execCommand('copy');
+          return true;
+        } catch (err) {
+          return false;
+        } finally {
+          document.body.removeChild(textarea);
+        }
+      }
+    }
+
+    function createColorBlock(color = '#000000') {
+      const wrapper = document.createElement('div');
+      wrapper.className = 'relative w-48 h-64 color-block flex flex-col items-center';
+
+      const block = document.createElement('div');
+      block.className = 'w-full h-full relative flex items-center justify-center cursor-pointer';
+      block.style.backgroundColor = color;
+
+      const hexLabel = document.createElement('span');
+      hexLabel.className = 'copy-label text-xs font-mono text-white bg-black bg-opacity-50 px-2 py-1 rounded text-center absolute bottom-1 left-1/2 -translate-x-1/2 flex items-center';
+      hexLabel.textContent = color.toUpperCase();
+      hexLabel.title = "Click to copy";
+      hexLabel.style.cursor = "pointer";
+
+      hexLabel.addEventListener('click', async (e) => {
+        e.stopPropagation();
+        const success = await copyToClipboard(hexLabel.textContent);
+        if (success) {
+          const oldText = hexLabel.textContent;
+          hexLabel.textContent = "Copied!";
+          setTimeout(() => {
+            hexLabel.textContent = oldText;
+          }, 1000);
+        }
+      });
+
+      const input = document.createElement('input');
+      input.type = 'color';
+      input.value = color;
+      input.style.position = 'absolute';
+      input.style.top = '0';
+      input.style.left = '0';
+      input.style.width = '100%';
+      input.style.height = '100%';
+      input.style.opacity = '0';
+      input.style.cursor = 'pointer';
+
+      block.appendChild(input);
+      block.appendChild(hexLabel);
+
+      wrapper.addEventListener('click', () => {
+        input.click();
+      });
+
+      input.addEventListener('input', (e) => {
+        const newColor = e.target.value.toUpperCase();
+        block.style.backgroundColor = newColor;
+        hexLabel.textContent = newColor;
+        input.value = newColor;
+      });
+
+      const actions = document.createElement('div');
+      actions.className = 'action-icons absolute inset-0 text-white flex-col items-center justify-center hidden';
+      actions.style.zIndex = '10';
+
+      const removeBtn = document.createElement('button');
+      removeBtn.innerHTML = '×';
+      removeBtn.onclick = (e) => {
+        e.stopPropagation();
+        wrapper.remove();
+        if (document.querySelectorAll('.color-block').length < 8) {
+          ghostBlock.style.display = 'flex';
+        }
+      };
+
+      actions.appendChild(removeBtn);
+      block.appendChild(actions);
+      wrapper.appendChild(block);
+
+      colorInputsContainer.insertBefore(wrapper, ghostBlock);
+
+      if (document.querySelectorAll('.color-block').length >= 8) {
+        ghostBlock.style.display = 'none';
+      }
+    }
+
+    function generateRandomColor() {
+      return '#' + Math.floor(Math.random() * 16777215).toString(16).padStart(6, '0');
+    }
+
+    function generatePalette(count = 5) {
+      const blocks = colorInputsContainer.querySelectorAll('.color-block');
+      blocks.forEach(block => {
+        const color = generateRandomColor();
+        block.querySelector('div').style.backgroundColor = color;
+        const hexLabel = block.querySelector('span');
+        hexLabel.textContent = color.toUpperCase();
+        const input = block.querySelector('input[type=color]');
+        input.value = color;
+      });
+    }
+
+    const ghostBlock = document.createElement('div');
+    ghostBlock.className = 'w-48 h-64 border-2 border-dashed border-gray-400 flex items-center justify-center cursor-pointer hover:bg-gray-100';
+    ghostBlock.innerHTML = '<span class="text-2xl text-gray-500">+</span>';
+    ghostBlock.onclick = () => {
+      const currentBlocks = document.querySelectorAll('.color-block').length;
+      if (currentBlocks < 8) {
+        createColorBlock(generateRandomColor());
+      } else {
+        alert('Maximum of 8 colors allowed.');
+      }
+    };
+
+    colorInputsContainer.appendChild(ghostBlock);
+
+    function savePalette() {
+      const nameInput = document.getElementById('paletteName');
+      let name = nameInput ? nameInput.value.trim() : '';
+      if (!name) {
+        name = 'Palette #' + Math.floor(1000 + Math.random() * 9000);
+        if (nameInput) nameInput.value = name;
+      }
+      const blocks = colorInputsContainer.querySelectorAll('.color-block');
+      const colors = Array.from(blocks).map(block => block.querySelector('input[type=color]').value.toUpperCase());
+      const palette = { name, colors };
+
+      let saved = JSON.parse(localStorage.getItem('palettes') || '[]');
+      saved.push(palette);
+      localStorage.setItem('palettes', JSON.stringify(saved));
+      if (nameInput) nameInput.value = '';
+      displaySavedPalettes();
+    }
+
+    function displaySavedPalettes() {
+      savedPalettes.innerHTML = '<h2 class="text-xl font-semibold mb-4">Saved palettes</h2><div class="grid grid-cols-1 sm:grid-cols-2 gap-4" id="paletteGrid"></div>';
+      const saved = JSON.parse(localStorage.getItem('palettes') || '[]');
+
+      saved.forEach(p => {
+        const container = document.getElementById('paletteGrid');
+        const div = document.createElement('div');
+        div.className = 'p-4 bg-gray-50 rounded-lg shadow';
+
+        const nameRow = document.createElement('div');
+        nameRow.className = 'flex justify-between items-center mb-2';
+
+        const name = document.createElement('div');
+        name.className = 'font-medium';
+        name.textContent = p.name;
+
+        const deleteBtn = document.createElement('button');
+        deleteBtn.textContent = '×';
+        deleteBtn.className = 'text-gray-500 text-xl leading-none hover:text-red-500 transition';
+        deleteBtn.onclick = () => {
+          const updated = JSON.parse(localStorage.getItem('palettes') || '[]').filter(pal => pal.name !== p.name);
+          localStorage.setItem('palettes', JSON.stringify(updated));
+          displaySavedPalettes();
+        };
+
+        nameRow.appendChild(name);
+        nameRow.appendChild(deleteBtn);
+        div.appendChild(nameRow);
+
+        const colors = document.createElement('div');
+        colors.className = 'flex gap-0 overflow-hidden rounded overflow-hidden w-full';
+        p.colors.forEach(c => {
+          const column = document.createElement('div');
+          column.className = 'flex-1 h-8 relative';
+
+          const label = document.createElement('div');
+          label.className = 'absolute inset-0 flex items-center justify-center text-xs font-mono text-white bg-black bg-opacity-50 opacity-0 hover:opacity-100 transition-opacity';
+          label.textContent = c.toUpperCase();
+
+          const colorBox = document.createElement('div');
+          colorBox.className = 'h-8 w-full';
+          colorBox.style.background = c;
+
+          const hexColor = c.startsWith('#') ? c.toUpperCase() : rgbToHex(c);
+          label.textContent = hexColor;
+
+          column.appendChild(label);
+          column.appendChild(colorBox);
+          colors.appendChild(column);
+        });
+
+        function rgbToHex(rgb) {
+          const result = rgb.match(/\d+/g).map(x => parseInt(x).toString(16).padStart(2, '0'));
+          return `#${result.join('').toUpperCase()}`;
+        }
+
+        div.appendChild(colors);
+        container.appendChild(div);
+      });
+    }
+
+    createColorBlock('#98E1FB');
+    createColorBlock('#9BC6FC');
+    createColorBlock('#A667FB');
+    displaySavedPalettes();
+  </script>
+</body>
+</html>
