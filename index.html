@@ -73,7 +73,7 @@
       block.style.backgroundColor = color;
 
       const hexLabel = document.createElement('span');
-      hexLabel.className = 'copy-label text-xs font-mono text-white bg-black bg-opacity-50 px-2 py-1 rounded text-center absolute bottom-1 left-1/2 -translate-x-1/2 flex items-center';
+      hexLabel.className = 'copy-label text-m font-mono text-white bg-black bg-opacity-50 px-2 py-1 rounded text-center absolute bottom-1 left-1/2 -translate-x-1/2 flex items-center';
       hexLabel.textContent = color.toUpperCase();
       hexLabel.title = "Click to copy";
       hexLabel.style.cursor = "pointer";
@@ -121,6 +121,7 @@
 
       const removeBtn = document.createElement('button');
       removeBtn.innerHTML = '×';
+      removeBtn.className = 'bg-black bg-opacity-30 hover:bg-opacity-50 rounded-full w-10 h-10 flex items-center justify-center';
       removeBtn.onclick = (e) => {
         e.stopPropagation();
         wrapper.remove();
@@ -195,7 +196,7 @@
         document.getElementById('paletteGrid').innerHTML = 
             '<p class="text-gray-500 italic">You have no saved palettes yet.</p>';
         return;
-    }
+      }
 
       saved.forEach(p => {
         const container = document.getElementById('paletteGrid');
