@@ -191,6 +191,11 @@
     function displaySavedPalettes() {
       savedPalettes.innerHTML = '<h2 class="text-xl font-semibold mb-4">Saved palettes</h2><div class="grid grid-cols-1 sm:grid-cols-2 gap-4" id="paletteGrid"></div>';
       const saved = JSON.parse(localStorage.getItem('palettes') || '[]');
+      if (saved.length === 0) {
+        document.getElementById('paletteGrid').innerHTML = 
+            '<p class="text-gray-500 italic">You have no saved palettes yet.</p>';
+        return;
+    }
 
       saved.forEach(p => {
         const container = document.getElementById('paletteGrid');
